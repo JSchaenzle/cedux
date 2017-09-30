@@ -1,8 +1,12 @@
 #include "cedux.h"
 #include <stdio.h>
+#include <string.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/time.h>
 
 struct branch_a {
-  int leaf_a1;
+  int leaves;
 };
 
 struct tree {
@@ -31,28 +35,83 @@ struct my_action_def {
   };
 };
 
-CEDUX_DEFINE_STORE(struct tree, struct my_action_def, my_tree)
-// struct my_tree store;
+CEDUX_DEFINE_STORE(struct tree, struct my_action_def, my_store)
 
 void reducer_1(struct tree * p_tree, struct my_action_def action)
 {
-  printf("In my reducer!\n");
+  switch (action.type)
+  {
+    case ADD_LEAVES:
+      p_tree->a.leaves += action.add_leaves_data.count;
+      break;
+    case REMOVE_LEAVES:
+      p_tree->a.leaves -= action.add_leaves_data.count;
+      break;
+    default:
+      break;
+  } 
+}
+
+void timer_handler (int signum)
+{
+  cedux_dispatch(&my_store, (struct my_action_def){
+    .type = rand() % 2 != 1 ? ADD_LEAVES : REMOVE_LEAVES,
+    .add_leaves_data = {
+        .count = rand() % 100
+    }
+  });
+
+  printf("Num leaves %d!\n", my_store.tree.a.leaves);
+}
+
+void setup_timer(void)
+{
+   struct sigaction sa;
+   struct itimerval timer;
+
+   /* Install timer_handler as the signal handler for SIGVTALRM. */
+   memset (&sa, 0, sizeof (sa));
+   sa.sa_handler = &timer_handler;
+   sigaction (SIGVTALRM, &sa, NULL);
+
+   /* Configure the timer to expire after 250 msec... */
+   timer.it_value.tv_sec = 0;
+   timer.it_value.tv_usec = 250000;
+   /* ... and every 250 msec after that. */
+   timer.it_interval.tv_sec = 0;
+   timer.it_interval.tv_usec = 250000;
+   /* Start a virtual timer. It counts down whenever this process is
+     executing. */
+   setitimer (ITIMER_VIRTUAL, &timer, NULL);
 }
 
 int main(void)
 {
-  cedux_init_my_tree(&store);
+  cedux_init_my_store(&my_store);
+  cedux_register_my_store_reducer(&my_store, reducer_1);
 
-  cedux_register_my_tree_reducer(&store, reducer_1);
+  setup_timer();
 
   struct my_action_def action1 = {
     .type = ADD_LEAVES,
     .add_leaves_data = {
-        .count = 5
+        .count = 50
     }
   };
+  cedux_dispatch(&my_store, action1);
 
-  cedux_dispatch(&store, action1);
+  cedux_dispatch(&my_store, (struct my_action_def){
+    .type = REMOVE_LEAVES,
+    .add_leaves_data = {
+        .count = 15 
+    }
+  });
 
+  while(1) {
+    bool did_work = cedux_run(&my_store);
+    if (did_work) {
+      printf("Num leaves %d!\n", my_store.tree.a.leaves);
+    }
+  } 
 }
 

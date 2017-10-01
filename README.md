@@ -1,6 +1,7 @@
 <div>
   <img src='cedux.png'></img>
 </div>
+
 ##### A Redux-like model for C
 
 Cedux is a tool which enables developer to write clean C applications that don't require an operating system.

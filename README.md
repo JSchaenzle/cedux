@@ -30,10 +30,11 @@ In this macro, `TREE_TYPE` is the type (structure definition) that describes you
 `ACTION_TYPE` is the type that describes the actions that can be dispatched to the store.
 `STORE_NAME` is used as the suffix to the generated store instance name and the suffix for the generated methods described below. In the following documentation, _x_ represents the store name.
 
-For example, `CEDUX_DEFINE_STORE(struct my_app_state, struct action, my_store)` would create a store which contains a state tree of type `struct my_app_state`. Actions of type `struct action` could be dispatched to the store. After the macro, a variable `my_store` exists which is the store.
+For example, `CEDUX_DEFINE_STORE(struct my_app_state, struct action, my_store)` would create a store which contains a state tree of type `struct my_app_state`. Actions of type `struct action` could be dispatched to the store. After the macro, a variable `my_store` exists which is the store. The state tree is accessible via `my_store.tree`;
+
 
 ### Initialize the Store
-To initialize the store`cedux_init_x()`
+To initialize the store call `cedux_init_x()`. This sets up the internals of the internal list and queue.
 
 #### Register Reducers
 `cedux_register_x(store, reducer)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE` and reducer is a function pointer to a reducer function. The reducer function must have a signature of `void reducer(<tree type pointer>, action)`
@@ -47,8 +48,7 @@ Somewhere in the main loop of your application you need to call the Cedux run fu
 `cedux_run_x(TStore * p_store)`
 
 ### Generated Code
-
-`CEDUX_DEFINE_STORE(struct my_app_state, struct my_action, my_store)` generates the following:
+As an example, `CEDUX_DEFINE_STORE(struct my_app_state, struct my_action, my_store)` would generate the following:
 
 ```
 struct my_store_handle my_store;  // The instance of the store
@@ -57,4 +57,10 @@ void cedux_dispatch_my_store(struct my_store_handle* p_store, struct my_action_d
 bool cedux_run_my_store(struct my_store_handle* p_store); // run function
 ```
 
+### Setup
+To use Cedux you'll need to copy the following files into your application.
+  - cedux.h
+  - queue.h _(Used for the action queue)_
+  - list.h  _(Used to hold the registered reducers)_
 
+For more information on the queue implementation see: https://spin.atomicobject.com/2017/03/08/message-queue-for-c/

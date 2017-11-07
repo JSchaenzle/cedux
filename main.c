@@ -28,7 +28,8 @@ struct my_action_def {
   };
 };
 
-CEDUX_DEFINE_STORE(struct tree, struct my_action_def, my_store)
+CEDUX_DECLARE_STORE(struct tree, struct my_action_def, my_store);
+CEDUX_DEFINE_STORE(struct tree, struct my_action_def, my_store);
 
 void reducer_1(struct tree * p_tree, struct my_action_def action) 
 {

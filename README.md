@@ -10,6 +10,7 @@ It works like this:
   - Application state is stored in a global tree which is created by the `CEDUX_DEFINE_STORE()` macro.
   - Producers of data dispatch actions to the store via calls to `cedux_dispatch_x()`.
   - _Reducers_, which are registered during application initialization, receive dispatched actions and the current state tree and are responsible for updating the state as needed.
+  - Optional _Subscribers_, which are also registered during application initialization, receive the new state tree after reducers process any actions.
   - In the `main` loop, calls to `cedux_run_x()` check for dispatched actions and forward them to all registered reducers.
 
 ## Recommendations
@@ -37,7 +38,10 @@ For example, `CEDUX_DEFINE_STORE(struct my_app_state, struct action, my_store)` 
 To initialize the store call `cedux_init_x()`. This sets up the internals of the internal list and queue.
 
 #### Register Reducers
-`cedux_register_x(store, reducer)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE` and reducer is a function pointer to a reducer function. The reducer function must have a signature of `void reducer(<tree type pointer>, action)`
+`cedux_register_x_reducer(store, reducer)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE` and `reducer` is a function pointer to a reducer function. The reducer function must have a signature of `void reducer(<tree type pointer>, action)`
+
+#### Register Subscribers (Optional)
+`cedux_register_x_subscriber(store, subscriber_container)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE` and `subscriber_container` is a pointer to a simple struct containing the subscriber function and optionally extra data to be passed with each call to the subscriber. The subscriber function must have a signature of `void subscriber(<tree type pointer>, void *data)`.  Cedux does not look at or modify `data` at all, so you can use it for whatever extra information you need, or just set it to `NULL` and ignore it.
 
 #### Dispatch Actions
 Call the dispatch function to send an action to the store. This method pushes the action into the stores action queue to be handled later by the run function.

@@ -46,16 +46,34 @@ void reducer_1(struct tree * p_tree, struct my_action_def action)
   } 
 }
 
+void subscriber_func(const struct tree * p_tree, void *data)
+{
+  int number = (int)data;
+  printf("Subscriber %d: Num leaves %d!\n", number, p_tree->a.leaves);
+}
+
 int main(void)
 {
   cedux_init_my_store(&my_store);
   cedux_register_my_store_reducer(&my_store, reducer_1);
+
+  struct my_store_subscriber_container container1 = {
+    .subscriber = subscriber_func,
+    .data = (void *)1,
+  };
+  struct my_store_subscriber_container container2 = {
+    .subscriber = subscriber_func,
+    .data = (void *)2,
+  };
+  cedux_register_my_store_subscriber(&my_store, &container1);
+  cedux_register_my_store_subscriber(&my_store, &container2);
+
   setup_timer();
 
   while(1) {
     bool did_work = cedux_run_my_store(&my_store);
     if (did_work) {
-      printf("Num leaves %d!\n", my_store.tree.a.leaves);
+      printf("Did work.\n");
     }
   } 
 }

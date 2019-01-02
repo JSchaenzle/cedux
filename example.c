@@ -62,17 +62,8 @@ int main(void)
   my_store = cedux_init_my_store(); // Initialize the internals of the store (list, queue)
 
   cedux_register_my_store_reducer(&my_store, reducer_1);
-
-  struct my_store_subscriber_container container1 = {
-    .subscriber = subscriber_func,
-    .data = (void *)1,
-  };
-  struct my_store_subscriber_container container2 = {
-    .subscriber = subscriber_func,
-    .data = (void *)2,
-  };
-  cedux_register_my_store_subscriber(&my_store, &container1);
-  cedux_register_my_store_subscriber(&my_store, &container2);
+  cedux_register_my_store_subscriber(&my_store, subscriber_func, (void *)1);
+  cedux_register_my_store_subscriber(&my_store, subscriber_func, (void *)2);
 
   setup_timer();
 

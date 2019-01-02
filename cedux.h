@@ -17,12 +17,13 @@ struct STORE_NAME##_subscriber_container                                        
 };                                                                                              \
 QUEUE_DECLARATION(STORE_NAME##_action_queue, ACTION_TYPE, 16)                                   \
 LIST_DECLARATION(STORE_NAME##_reducer_list, STORE_NAME##_REDUCER, 32)                           \
-LIST_DECLARATION(STORE_NAME##_subscriber_list, struct STORE_NAME##_subscriber_container *, 32)  \
+LIST_DECLARATION(STORE_NAME##_subscriber_list, struct STORE_NAME##_subscriber_container, 32)    \
                                                                                                 \
 void cedux_register_##STORE_NAME##_reducer(struct STORE_NAME##_handle * p_store,                \
                                            STORE_NAME##_REDUCER reducer);                       \
 void cedux_register_##STORE_NAME##_subscriber(struct STORE_NAME##_handle * p_store,             \
-                                              struct STORE_NAME##_subscriber_container * subscriber); \
+                                              STORE_NAME##_SUBSCRIBER subscriber,               \
+                                              void *data);                                      \
 struct STORE_NAME##_handle cedux_init_##STORE_NAME(void);                                       \
 void cedux_dispatch_##STORE_NAME(struct STORE_NAME##_handle * p_store, ACTION_TYPE action);     \
 bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store);                              \
@@ -39,7 +40,7 @@ struct STORE_NAME##_handle                                                      
                                                                                                 \
 QUEUE_DEFINITION(STORE_NAME##_action_queue, ACTION_TYPE)                                        \
 LIST_DEFINITION(STORE_NAME##_reducer_list, STORE_NAME##_REDUCER)                                \
-LIST_DEFINITION(STORE_NAME##_subscriber_list, struct STORE_NAME##_subscriber_container *)       \
+LIST_DEFINITION(STORE_NAME##_subscriber_list, struct STORE_NAME##_subscriber_container)         \
                                                                                                 \
 void cedux_register_##STORE_NAME##_reducer(struct STORE_NAME##_handle * p_store,                \
                                           STORE_NAME##_REDUCER reducer) {                       \
@@ -47,8 +48,12 @@ void cedux_register_##STORE_NAME##_reducer(struct STORE_NAME##_handle * p_store,
 }                                                                                               \
                                                                                                 \
 void cedux_register_##STORE_NAME##_subscriber(struct STORE_NAME##_handle * p_store,             \
-                                              struct STORE_NAME##_subscriber_container * subscriber) { \
-  STORE_NAME##_subscriber_list_push(&p_store->subscriber_list, &subscriber);                    \
+                                              STORE_NAME##_SUBSCRIBER subscriber,               \
+                                              void *data) {                                     \
+  struct STORE_NAME##_subscriber_container container;                                           \
+  container.subscriber = subscriber;                                                            \
+  container.data = data;                                                                        \
+  STORE_NAME##_subscriber_list_push(&p_store->subscriber_list, &container);                     \
 }                                                                                               \
                                                                                                 \
 struct STORE_NAME##_handle cedux_init_##STORE_NAME(void) {                                      \
@@ -66,7 +71,7 @@ void cedux_dispatch_##STORE_NAME(struct STORE_NAME##_handle * p_store, ACTION_TY
 bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store) {                             \
   ACTION_TYPE action;                                                                           \
   STORE_NAME##_REDUCER reducer;                                                                 \
-  struct STORE_NAME##_subscriber_container *subscriber_container;                               \
+  struct STORE_NAME##_subscriber_container subscriber_container;                                \
   bool did_work = false;                                                                        \
   while(STORE_NAME##_action_queue_dequeue(&p_store->action_queue, &action) == DEQUEUE_RESULT_SUCCESS) \
   {                                                                                             \
@@ -80,7 +85,7 @@ bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store) {             
   {                                                                                             \
     LIST_FOR_EACH(p_store->subscriber_list, subscriber_container)                               \
     {                                                                                           \
-      subscriber_container->subscriber(&p_store->tree, subscriber_container->data);             \
+      subscriber_container.subscriber(&p_store->tree, subscriber_container.data);               \
     }                                                                                           \
   }                                                                                             \
   return did_work;                                                                              \

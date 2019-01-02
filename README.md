@@ -41,7 +41,7 @@ To initialize the store call `cedux_init_x()`. This sets up the internal list an
 `cedux_register_x_reducer(store, reducer)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE` and `reducer` is a function pointer to a reducer function. The reducer function must have a signature of `void reducer(<tree type pointer>, action)`
 
 #### Register Subscribers (Optional)
-`cedux_register_x_subscriber(store, subscriber_container)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE` and `subscriber_container` is a pointer to a simple struct containing the subscriber function and optionally extra data to be passed with each call to the subscriber. The subscriber function must have a signature of `void subscriber(<tree type pointer>, void *data)`.  Cedux does not look at or modify `data` at all, so you can use it for whatever extra information you need, or just set it to `NULL` and ignore it.
+`cedux_register_x_subscriber(store, subscriber, data)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE`, `subscriber` is the subscriber function, and `data` is optional extra data to be passed with each call to the subscriber. The subscriber function must have a signature of `void subscriber(<tree type pointer>, void *data)`.  Cedux does not look at or modify `data` at all, so you can use it for whatever extra information you need, or just set it to `NULL` and ignore it.
 
 #### Dispatch Actions
 Call the dispatch function to send an action to the store. This method pushes the action into the stores action queue to be handled later by the run function.

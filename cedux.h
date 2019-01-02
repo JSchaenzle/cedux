@@ -23,7 +23,7 @@ void cedux_register_##STORE_NAME##_reducer(struct STORE_NAME##_handle * p_store,
                                            STORE_NAME##_REDUCER reducer);                       \
 void cedux_register_##STORE_NAME##_subscriber(struct STORE_NAME##_handle * p_store,             \
                                               struct STORE_NAME##_subscriber_container * subscriber); \
-void cedux_init_##STORE_NAME(struct STORE_NAME##_handle * p_store);                             \
+struct STORE_NAME##_handle cedux_init_##STORE_NAME(void);                                       \
 void cedux_dispatch_##STORE_NAME(struct STORE_NAME##_handle * p_store, ACTION_TYPE action);     \
 bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store);                              \
 struct STORE_NAME##_handle                                                                      \
@@ -32,7 +32,7 @@ struct STORE_NAME##_handle                                                      
   struct STORE_NAME##_action_queue action_queue;                                                \
   struct STORE_NAME##_reducer_list reducer_list;                                                \
   struct STORE_NAME##_subscriber_list subscriber_list;                                          \
-} STORE_NAME;
+};
 
 
 #define CEDUX_DEFINE_STORE(TREE_TYPE, ACTION_TYPE, STORE_NAME)                                  \
@@ -51,10 +51,12 @@ void cedux_register_##STORE_NAME##_subscriber(struct STORE_NAME##_handle * p_sto
   STORE_NAME##_subscriber_list_push(&p_store->subscriber_list, &subscriber);                    \
 }                                                                                               \
                                                                                                 \
-void cedux_init_##STORE_NAME(struct STORE_NAME##_handle * p_store) {                            \
-  STORE_NAME##_action_queue_init(&p_store->action_queue);                                       \
-  STORE_NAME##_reducer_list_init(&p_store->reducer_list);                                       \
-  STORE_NAME##_subscriber_list_init(&p_store->subscriber_list);                                 \
+struct STORE_NAME##_handle cedux_init_##STORE_NAME(void) {                                      \
+  struct STORE_NAME##_handle new_store;                                                         \
+  STORE_NAME##_action_queue_init(&new_store.action_queue);                                      \
+  STORE_NAME##_reducer_list_init(&new_store.reducer_list);                                      \
+  STORE_NAME##_subscriber_list_init(&new_store.subscriber_list);                                \
+  return new_store;                                                                             \
 }                                                                                               \
                                                                                                 \
 void cedux_dispatch_##STORE_NAME(struct STORE_NAME##_handle * p_store, ACTION_TYPE action) {    \

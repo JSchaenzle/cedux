@@ -35,7 +35,7 @@ For example, `CEDUX_DEFINE_STORE(struct my_app_state, struct action, my_store)` 
 
 
 ### Initialize the Store
-To initialize the store call `cedux_init_x()`. This sets up the internals of the internal list and queue.
+To initialize the store call `cedux_init_x()`. This sets up the internal list and queue and returns the store.
 
 #### Register Reducers
 `cedux_register_x_reducer(store, reducer)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE` and `reducer` is a function pointer to a reducer function. The reducer function must have a signature of `void reducer(<tree type pointer>, action)`
@@ -55,8 +55,8 @@ Somewhere in the main loop of your application you need to call the Cedux run fu
 As an example, `CEDUX_DEFINE_STORE(struct my_app_state, struct my_action, my_store)` would generate the following:
 
 ```
-struct my_store_handle my_store;  // The instance of the store
-void cedux_init_my_store(struct my_store_handle* p_store); // store init function
+struct my_store_handle;  // The struct definition for the store handle
+struct my_store_handle cedux_init_my_store(void); // store init function
 void cedux_dispatch_my_store(struct my_store_handle* p_store, struct my_action_def action); // action dispatch function
 bool cedux_run_my_store(struct my_store_handle* p_store); // run function
 ```

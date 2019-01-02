@@ -28,8 +28,13 @@ struct my_action_def {
   };
 };
 
+// Normally this would be in a header file. This line defines a struct
+// for the store handles called 'struct my_store_handle'
 CEDUX_DECLARE_STORE(struct tree, struct my_action_def, my_store);
+
 CEDUX_DEFINE_STORE(struct tree, struct my_action_def, my_store);
+
+struct my_store_handle my_store;
 
 void reducer_1(struct tree * p_tree, struct my_action_def action) 
 {
@@ -54,7 +59,8 @@ void subscriber_func(const struct tree * p_tree, void *data)
 
 int main(void)
 {
-  cedux_init_my_store(&my_store);
+  my_store = cedux_init_my_store(); // Initialize the internals of the store (list, queue)
+
   cedux_register_my_store_reducer(&my_store, reducer_1);
 
   struct my_store_subscriber_container container1 = {

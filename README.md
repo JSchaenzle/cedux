@@ -68,3 +68,7 @@ To use Cedux you'll need to copy the following files into your application.
   - list.h  _(Used to hold the registered reducers)_
 
 For more information on the queue implementation see: https://spin.atomicobject.com/2017/03/08/message-queue-for-c/
+
+### Thread Safety
+
+For applications that require thread safety guarantees, Cedux provides the option to register platform-specific locking functions around the action queue so that multiple threads can dispatch actions at the time that Cedux is processing them.  If you don't need thread safety in your application, you can skip this step.  Use the `cedux_set_threadsafe_x` function to provide a handle to a platform-specific lock variable and wrapper functions to acquire and release the lock.  Note that the lock should be initialized before passing it to Cedux.  See `threadsafe_example.c` for an implementation using POSIX threads.

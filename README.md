@@ -18,7 +18,7 @@ It works like this:
   - Use a tagged-union for the action type (see main.c)
 
 ## Example
-Take a look at main.c for a simple example usage.
+Take a look at `example.c` for a simple example usage.
 
 ## The Nitty-Gritty Details
 ### Cedux Usage
@@ -43,11 +43,11 @@ To initialize the store call `cedux_init_x()`. This sets up the internal list an
 #### Register Subscribers (Optional)
 `cedux_register_x_subscriber(store, subscriber, data)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE`, `subscriber` is the subscriber function, and `data` is optional extra data to be passed with each call to the subscriber. The subscriber function must have a signature of `void subscriber(<tree type pointer>, void *data)`.  Cedux does not look at or modify `data` at all, so you can use it for whatever extra information you need, or just set it to `NULL` and ignore it.
 
-#### Dispatch Actions
+### Dispatch Actions
 Call the dispatch function to send an action to the store. This method pushes the action into the stores action queue to be handled later by the run function.
 `cedux_dispatch_x(store, action)` where `store` is a pointer to the store and `action` is a variable for `ACTION_TYPE`.
 
-#### Run
+### Run
 Somewhere in the main loop of your application you need to call the Cedux run function. This function checks if any actions have been dispatched and if so, pops them out of the action queue and sends them to all registered reducers.
 `cedux_run_x(TStore * p_store)`
 

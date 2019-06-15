@@ -15,10 +15,10 @@ It works like this:
 
 ## Recommendations
   - Try to only modify the state tree from within reducers.
-  - Use a tagged-union for the action type (see main.c)
+  - Use a tagged-union for the action type (see `example.c`)
 
 ## Example
-Take a look at main.c for a simple example usage.
+Take a look at `example.c` for a simple example usage.
 
 ## The Nitty-Gritty Details
 ### Cedux Usage

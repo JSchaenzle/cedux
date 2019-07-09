@@ -43,11 +43,11 @@ To initialize the store call `cedux_init_x()`. This sets up the internal list an
 #### Register Subscribers (Optional)
 `cedux_register_x_subscriber(store, subscriber, data)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE`, `subscriber` is the subscriber function, and `data` is optional extra data to be passed with each call to the subscriber. The subscriber function must have a signature of `void subscriber(<tree type pointer>, void *data)`.  Cedux does not look at or modify `data` at all, so you can use it for whatever extra information you need, or just set it to `NULL` and ignore it.
 
-#### Dispatch Actions
+### Dispatch Actions
 Call the dispatch function to send an action to the store. This method pushes the action into the stores action queue to be handled later by the run function.
 `cedux_dispatch_x(store, action)` where `store` is a pointer to the store and `action` is a variable for `ACTION_TYPE`.
 
-#### Run
+### Run
 Somewhere in the main loop of your application you need to call the Cedux run function. This function checks if any actions have been dispatched and if so, pops them out of the action queue and sends them to all registered reducers.
 `cedux_run_x(TStore * p_store)`
 
@@ -68,3 +68,7 @@ To use Cedux you'll need to copy the following files into your application.
   - list.h  _(Used to hold the registered reducers)_
 
 For more information on the queue implementation see: https://spin.atomicobject.com/2017/03/08/message-queue-for-c/
+
+### Thread Safety
+
+For applications that require thread safety guarantees, Cedux provides the option to register platform-specific locking functions around the action queue so that multiple threads can dispatch actions at the time that Cedux is processing them.  If you don't need thread safety in your application, you can skip this step.  Use the `cedux_set_threadsafe_x` function to provide a handle to a platform-specific lock variable and wrapper functions to acquire and release the lock.  Note that the lock should be initialized before passing it to Cedux.  See `threadsafe_example.c` for an implementation using POSIX threads.

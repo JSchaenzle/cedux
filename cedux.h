@@ -27,12 +27,17 @@ void cedux_register_##STORE_NAME##_subscriber(struct STORE_NAME##_handle * p_sto
 struct STORE_NAME##_handle cedux_init_##STORE_NAME(void);                                       \
 void cedux_dispatch_##STORE_NAME(struct STORE_NAME##_handle * p_store, ACTION_TYPE action);     \
 bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store);                              \
+void cedux_set_threadsafe_##STORE_NAME(struct STORE_NAME##_handle * p_store, void * lock,       \
+                                       cedux_lock_func_t lock_get, cedux_lock_func_t lock_release); \
 struct STORE_NAME##_handle                                                                      \
 {                                                                                               \
   TREE_TYPE tree;                                                                               \
   struct STORE_NAME##_action_queue action_queue;                                                \
   struct STORE_NAME##_reducer_list reducer_list;                                                \
   struct STORE_NAME##_subscriber_list subscriber_list;                                          \
+  void *lock;                                                                                   \
+  cedux_lock_func_t lock_get;                                                                   \
+  cedux_lock_func_t lock_release;                                                               \
 };
 
 
@@ -61,11 +66,16 @@ struct STORE_NAME##_handle cedux_init_##STORE_NAME(void) {                      
   STORE_NAME##_action_queue_init(&new_store.action_queue);                                      \
   STORE_NAME##_reducer_list_init(&new_store.reducer_list);                                      \
   STORE_NAME##_subscriber_list_init(&new_store.subscriber_list);                                \
+  new_store.lock = NULL;                                                                        \
+  new_store.lock_get = NULL;                                                                    \
+  new_store.lock_release = NULL;                                                                \
   return new_store;                                                                             \
 }                                                                                               \
                                                                                                 \
 void cedux_dispatch_##STORE_NAME(struct STORE_NAME##_handle * p_store, ACTION_TYPE action) {    \
+  if (p_store->lock_get) p_store->lock_get(p_store->lock);                                      \
   STORE_NAME##_action_queue_enqueue(&p_store->action_queue, &action);                           \
+  if (p_store->lock_release) p_store->lock_release(p_store->lock);                              \
 }                                                                                               \
                                                                                                 \
 bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store) {                             \
@@ -73,6 +83,7 @@ bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store) {             
   STORE_NAME##_REDUCER reducer;                                                                 \
   struct STORE_NAME##_subscriber_container subscriber_container;                                \
   bool did_work = false;                                                                        \
+  if (p_store->lock_get) p_store->lock_get(p_store->lock);                                      \
   while(STORE_NAME##_action_queue_dequeue(&p_store->action_queue, &action) == DEQUEUE_RESULT_SUCCESS) \
   {                                                                                             \
     LIST_FOR_EACH(p_store->reducer_list, reducer)                                               \
@@ -81,6 +92,7 @@ bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store) {             
     }                                                                                           \
     did_work = true;                                                                            \
   }                                                                                             \
+  if (p_store->lock_release) p_store->lock_release(p_store->lock);                              \
   if (did_work)                                                                                 \
   {                                                                                             \
     LIST_FOR_EACH(p_store->subscriber_list, subscriber_container)                               \
@@ -89,6 +101,16 @@ bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store) {             
     }                                                                                           \
   }                                                                                             \
   return did_work;                                                                              \
+}                                                                                               \
+                                                                                                \
+void cedux_set_threadsafe_##STORE_NAME(struct STORE_NAME##_handle * p_store, void * lock,       \
+                                       cedux_lock_func_t lock_get, cedux_lock_func_t lock_release) \
+{                                                                                               \
+  p_store->lock = lock;                                                                         \
+  p_store->lock_get = lock_get;                                                                 \
+  p_store->lock_release = lock_release;                                                         \
 }
+
+typedef void(*cedux_lock_func_t)(void *lock);
 
 #endif

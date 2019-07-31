@@ -8,14 +8,17 @@
 #define CEDUX_DECLARE_STORE(TREE_TYPE, ACTION_TYPE, STORE_NAME)                                 \
                                                                                                 \
 struct STORE_NAME##_handle;                                                                     \
-typedef void(*STORE_NAME##_REDUCER)(TREE_TYPE * p_tree, ACTION_TYPE action);                    \
-typedef void(*STORE_NAME##_SUBSCRIBER)(const TREE_TYPE * p_tree, void *data);                   \
+typedef bool(*STORE_NAME##_REDUCER)(TREE_TYPE * p_tree, ACTION_TYPE action);                    \
+typedef void(*STORE_NAME##_SUBSCRIBER)(struct STORE_NAME##_handle * p_store,                    \
+                                       TREE_TYPE const * const p_tree, void *data);             \
 struct STORE_NAME##_subscriber_container                                                        \
 {                                                                                               \
     STORE_NAME##_SUBSCRIBER subscriber;                                                         \
     void *data;                                                                                 \
+    STORE_NAME##_REDUCER linked_reducer;                                                        \
 };                                                                                              \
-QUEUE_DECLARATION(STORE_NAME##_action_queue, ACTION_TYPE, 16)                                   \
+QUEUE_TYPE_DECLARATION(STORE_NAME##_action_queue, ACTION_TYPE, 16)                              \
+QUEUE_DECLARATION(STORE_NAME##_action_queue, ACTION_TYPE)                                       \
 LIST_DECLARATION(STORE_NAME##_reducer_list, STORE_NAME##_REDUCER, 32)                           \
 LIST_DECLARATION(STORE_NAME##_subscriber_list, struct STORE_NAME##_subscriber_container, 32)    \
                                                                                                 \
@@ -24,6 +27,10 @@ void cedux_register_##STORE_NAME##_reducer(struct STORE_NAME##_handle * p_store,
 void cedux_register_##STORE_NAME##_subscriber(struct STORE_NAME##_handle * p_store,             \
                                               STORE_NAME##_SUBSCRIBER subscriber,               \
                                               void *data);                                      \
+void cedux_register_##STORE_NAME##_linked_subscriber(struct STORE_NAME##_handle * p_store,      \
+                                              STORE_NAME##_SUBSCRIBER subscriber,               \
+                                              void *data,                                       \
+                                              STORE_NAME##_REDUCER linked_reducer);             \
 struct STORE_NAME##_handle cedux_init_##STORE_NAME(void);                                       \
 void cedux_dispatch_##STORE_NAME(struct STORE_NAME##_handle * p_store, ACTION_TYPE action);     \
 bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store);                              \
@@ -54,10 +61,18 @@ void cedux_register_##STORE_NAME##_reducer(struct STORE_NAME##_handle * p_store,
                                                                                                 \
 void cedux_register_##STORE_NAME##_subscriber(struct STORE_NAME##_handle * p_store,             \
                                               STORE_NAME##_SUBSCRIBER subscriber,               \
-                                              void *data) {                                     \
+                                              void * p_data) {                                  \
+  cedux_register_##STORE_NAME##_linked_subscriber(p_store, subscriber, p_data, NULL);           \
+}                                                                                               \
+                                                                                                \
+void cedux_register_##STORE_NAME##_linked_subscriber(struct STORE_NAME##_handle * p_store,      \
+                                              STORE_NAME##_SUBSCRIBER subscriber,               \
+                                              void * p_data,                                    \
+                                              STORE_NAME##_REDUCER linked_reducer) {            \
   struct STORE_NAME##_subscriber_container container;                                           \
   container.subscriber = subscriber;                                                            \
-  container.data = data;                                                                        \
+  container.data = p_data;                                                                      \
+  container.linked_reducer = linked_reducer;                                                    \
   STORE_NAME##_subscriber_list_push(&p_store->subscriber_list, &container);                     \
 }                                                                                               \
                                                                                                 \
@@ -88,16 +103,28 @@ bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store) {             
   {                                                                                             \
     LIST_FOR_EACH(p_store->reducer_list, reducer)                                               \
     {                                                                                           \
-      reducer(&p_store->tree, action);                                                          \
+      bool reducer_did_work = reducer(&p_store->tree, action);                                  \
+      if (reducer_did_work)                                                                     \
+      {                                                                                         \
+        did_work = true;                                                                        \
+        LIST_FOR_EACH(p_store->subscriber_list, subscriber_container)                           \
+        {                                                                                       \
+          if (subscriber_container.linked_reducer == reducer)                                   \
+          {                                                                                     \
+            subscriber_container.subscriber(p_store, &p_store->tree, subscriber_container.data);\
+          }                                                                                     \
+        }                                                                                       \
+      }                                                                                         \
     }                                                                                           \
-    did_work = true;                                                                            \
   }                                                                                             \
   if (p_store->lock_release) p_store->lock_release(p_store->lock);                              \
   if (did_work)                                                                                 \
   {                                                                                             \
     LIST_FOR_EACH(p_store->subscriber_list, subscriber_container)                               \
     {                                                                                           \
-      subscriber_container.subscriber(&p_store->tree, subscriber_container.data);               \
+      if (subscriber_container.linked_reducer == NULL) {                                        \
+        subscriber_container.subscriber(p_store, &p_store->tree, subscriber_container.data);    \
+      }                                                                                         \
     }                                                                                           \
   }                                                                                             \
   return did_work;                                                                              \
@@ -110,6 +137,8 @@ void cedux_set_threadsafe_##STORE_NAME(struct STORE_NAME##_handle * p_store, voi
   p_store->lock_get = lock_get;                                                                 \
   p_store->lock_release = lock_release;                                                         \
 }
+
+#define STORE_TREE(STORE) STORE.tree
 
 typedef void(*cedux_lock_func_t)(void *lock);
 

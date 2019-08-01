@@ -1,5 +1,6 @@
 #ifndef QUEUE_H
 #define QUEUE_H
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -14,14 +15,16 @@ enum dequeue_result {
   DEQUEUE_RESULT_EMPTY,
 };
 
-#define ARRAY_LENGTH(A) (sizeof(A)/sizeof((A)[0])) 
+#define ARRAY_LENGTH(A) (sizeof(A)/sizeof((A)[0]))
 
-#define QUEUE_DECLARATION(NAME, ITEM_TYPE, NUM_ITEMS)                                   \
+#define QUEUE_TYPE_DECLARATION(NAME, ITEM_TYPE, NUM_ITEMS)                              \
 struct NAME {                                                                           \
   uint16_t read_idx;                                                                    \
   uint16_t write_idx;                                                                   \
   ITEM_TYPE items[NUM_ITEMS];                                                           \
-};                                                                                      \
+};
+
+#define QUEUE_DECLARATION(NAME, ITEM_TYPE)                                              \
 void NAME ## _init(struct NAME * p_queue);                                              \
 enum enqueue_result NAME ##_enqueue(struct NAME * p_queue, ITEM_TYPE * p_new_item);     \
 enum dequeue_result NAME ##_dequeue(struct NAME * p_queue, ITEM_TYPE * p_item_out);     \

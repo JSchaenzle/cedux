@@ -8,17 +8,20 @@ Cedux is a tool which enables developer to write clean C applications that don't
 
 It works like this:
   - Application state is stored in a global tree which is created by the `CEDUX_DEFINE_STORE()` macro.
-  - Producers of data dispatch actions to the store via calls to `cedux_dispatch_x()`.
-  - _Reducers_, which are registered during application initialization, receive dispatched actions and the current state tree and are responsible for updating the state as needed.
-  - Optional _Subscribers_, which are also registered during application initialization, receive the new state tree after reducers process any actions.
+  - Producers of data (ISR, etc.) dispatch actions to the store via calls to `cedux_dispatch_x()`.
+  - _Reducers_, which are registered during application initialization, receive dispatched actions, along with the current state tree, and are responsible for updating the state as needed.
+  - _Subscribers_, which are also registered during application initialization, receive the new state tree after reducers process any actions.
+  - _Linked Subscribers_ run any time the Reducer they are linked to does work.
   - In the `main` loop, calls to `cedux_run_x()` check for dispatched actions and forward them to all registered reducers.
 
 ## Recommendations
   - Try to only modify the state tree from within reducers.
   - Use a tagged-union for the action type (see `example.c`)
+  - Use subscribers to perform side effects and dispact more actions if needed.
 
 ## Example
 Take a look at `example.c` for a simple example usage.
+You can compile and run it like this: `gcc example.c -o cedux.out && ./cedux.out`
 
 ## The Nitty-Gritty Details
 ### Cedux Usage
@@ -33,22 +36,26 @@ In this macro, `TREE_TYPE` is the type (structure definition) that describes you
 
 For example, `CEDUX_DEFINE_STORE(struct my_app_state, struct action, my_store)` would create a store which contains a state tree of type `struct my_app_state`. Actions of type `struct action` could be dispatched to the store. After the macro, a variable `my_store` exists which is the store. The state tree is accessible via `my_store.tree`;
 
-
 ### Initialize the Store
 To initialize the store call `cedux_init_x()`. This sets up the internal list and queue and returns the store.
 
-#### Register Reducers
+### Register Reducers
 `cedux_register_x_reducer(store, reducer)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE` and `reducer` is a function pointer to a reducer function. The reducer function must have a signature of `void reducer(<tree type pointer>, action)`
 
-#### Register Subscribers (Optional)
-`cedux_register_x_subscriber(store, subscriber, data)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE`, `subscriber` is the subscriber function, and `data` is optional extra data to be passed with each call to the subscriber. The subscriber function must have a signature of `void subscriber(<tree type pointer>, void *data)`.  Cedux does not look at or modify `data` at all, so you can use it for whatever extra information you need, or just set it to `NULL` and ignore it.
+### Register Generic Subscribers
+`cedux_register_x_subscriber(store, subscriber, data)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE`, `subscriber` is the subscriber function, and `data` is optional extra data to be passed with each call to the subscriber. The subscriber function must have a signature of `void subscriber(<store handle>, <tree type pointer>, void *data)`.  Cedux does not look at or modify `data` at all, so you can use it for whatever extra information you need, or just set it to `NULL` and ignore it.
+A generic subscriber will get called any time any reducer does work.
+
+### Register Linked Subscribers
+`cedux_register_x_linked_subscriber(store, subscriber, data, reducer)` where `store` is a pointer to the store created by `CEDUX_DEFINE_STORE`, `subscriber` is the subscriber function, and `data` is optional extra data to be passed with each call to the subscriber, and reducer is the reducer to link it to. The subscriber function must have a signature of `void subscriber(<store handle>, <tree type pointer>, void *data)`.  Cedux does not look at or modify `data` at all, so you can use it for whatever extra information you need, or just set it to `NULL` and ignore it.
+A linked subscriber will get called only when the reducer that it is linked to does work.
 
 ### Dispatch Actions
 Call the dispatch function to send an action to the store. This method pushes the action into the stores action queue to be handled later by the run function.
 `cedux_dispatch_x(store, action)` where `store` is a pointer to the store and `action` is a variable for `ACTION_TYPE`.
 
 ### Run
-Somewhere in the main loop of your application you need to call the Cedux run function. This function checks if any actions have been dispatched and if so, pops them out of the action queue and sends them to all registered reducers.
+Somewhere in the main loop of your application you need to call the Cedux run function. This function checks if any actions have been dispatched and if so, sends them to all registered reducers.
 `cedux_run_x(TStore * p_store)`
 
 ### Generated Code
@@ -67,7 +74,7 @@ To use Cedux you'll need to copy the following files into your application.
   - queue.h _(Used for the action queue)_
   - list.h  _(Used to hold the registered reducers)_
 
-For more information on the queue implementation see: https://spin.atomicobject.com/2017/03/08/message-queue-for-c/
+See example.c for a demonstration.
 
 ### Thread Safety
 

@@ -79,3 +79,15 @@ See example.c for a demonstration.
 ### Thread Safety
 
 For applications that require thread safety guarantees, Cedux provides the option to register platform-specific locking functions around the action queue so that multiple threads can dispatch actions at the time that Cedux is processing them.  If you don't need thread safety in your application, you can skip this step.  Use the `cedux_set_threadsafe_x` function to provide a handle to a platform-specific lock variable and wrapper functions to acquire and release the lock.  Note that the lock should be initialized before passing it to Cedux.  See `threadsafe_example.c` for an implementation using POSIX threads.
+
+
+## Testing
+This project is setup with unit testing using Ceedling (Unity and CMock)
+
+### To setup testing environment
+1. Setup rbenv. This will ensure the expected version or ruby is used.
+2. Install bundler with: `gem install bundler`
+3. Install gems with: `bundle install`
+
+### To run the tests:
+ > `bundle exec rake test:all`

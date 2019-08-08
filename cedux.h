@@ -5,6 +5,24 @@
 #include "queue.h"
 #include "list.h"
 
+#ifndef CEDUX_MAX_REDUCERS
+// Maximum number of reducers that can be registered
+// IMPORTANT: MUST BE A FACTROR OF TWO
+#define CEDUX_MAX_REDUCERS 32
+#endif
+
+#ifndef CEDUX_MAX_SUBSCRIBERS
+// Maximum number of subscribers that can be registered
+// IMPORTANT: MUST BE A FACTROR OF TWO
+#define CEDUX_MAX_SUBSCRIBERS 32
+#endif
+
+#ifndef CEDUX_MAX_ACTIONS
+// Maximum number of actions that can be dispatched between runs of the cedux_run_store()
+// IMPORTANT: MUST BE A FACTROR OF TWO
+#define CEDUX_MAX_ACTIONS 16
+#endif
+
 #define CEDUX_DECLARE_STORE(TREE_TYPE, ACTION_TYPE, STORE_NAME)                                 \
                                                                                                 \
 struct STORE_NAME##_handle;                                                                     \
@@ -17,10 +35,10 @@ struct STORE_NAME##_subscriber_container                                        
     void *data;                                                                                 \
     STORE_NAME##_REDUCER linked_reducer;                                                        \
 };                                                                                              \
-QUEUE_TYPE_DECLARATION(STORE_NAME##_action_queue, ACTION_TYPE, 16)                              \
+QUEUE_TYPE_DECLARATION(STORE_NAME##_action_queue, ACTION_TYPE, CEDUX_MAX_ACTIONS)               \
 QUEUE_DECLARATION(STORE_NAME##_action_queue, ACTION_TYPE)                                       \
-LIST_DECLARATION(STORE_NAME##_reducer_list, STORE_NAME##_REDUCER, 32)                           \
-LIST_DECLARATION(STORE_NAME##_subscriber_list, struct STORE_NAME##_subscriber_container, 32)    \
+LIST_DECLARATION(STORE_NAME##_reducer_list, STORE_NAME##_REDUCER, CEDUX_MAX_REDUCERS)           \
+LIST_DECLARATION(STORE_NAME##_subscriber_list, struct STORE_NAME##_subscriber_container, CEDUX_MAX_SUBSCRIBERS) \
                                                                                                 \
 void cedux_register_##STORE_NAME##_reducer(struct STORE_NAME##_handle * p_store,                \
                                            STORE_NAME##_REDUCER reducer);                       \

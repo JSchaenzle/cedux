@@ -34,18 +34,19 @@ struct my_action_def {
   };
 };
 
-void reducer(struct tree * p_tree, struct my_action_def action) 
+bool reducer(struct tree * p_tree, struct my_action_def action) 
 {
   switch (action.type)
   {
     case ADD_LEAVES:
       p_tree->a.leaves += action.add_leaves_data.count;
-      break;
+      return true;
     case REMOVE_LEAVES:
       p_tree->a.leaves -= action.add_leaves_data.count;
+      return true;
       break;
     default:
-      break;
+      return false;
   } 
 }
 

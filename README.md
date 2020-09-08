@@ -4,7 +4,7 @@
 
 ##### A Redux-like model for C
 
-Cedux is a tool which enables developer to write clean C applications that don't require an operating system.
+Cedux is a tool which enables developers to write clean C applications that don't require an operating system.
 
 It works like this:
   - Application state is stored in a global tree which is created by the `CEDUX_DEFINE_STORE()` macro.

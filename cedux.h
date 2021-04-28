@@ -117,13 +117,15 @@ bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store) {             
   struct STORE_NAME##_subscriber_container subscriber_container;                                \
   bool did_work = false;                                                                        \
   if (p_store->lock_get) p_store->lock_get(p_store->lock);                                      \
-  while(STORE_NAME##_action_queue_dequeue(&p_store->action_queue, &action) == DEQUEUE_RESULT_SUCCESS) \
+  while(STORE_NAME##_action_queue_dequeue(&p_store->action_queue, &action) == DEQUEUE_RESULT_SUCCESS)   \
   {                                                                                             \
+    bool action_did_work = false;                                                               \
     LIST_FOR_EACH(p_store->reducer_list, reducer)                                               \
     {                                                                                           \
       bool reducer_did_work = reducer(&p_store->tree, action);                                  \
       if (reducer_did_work)                                                                     \
       {                                                                                         \
+        action_did_work = true;                                                                 \
         did_work = true;                                                                        \
         LIST_FOR_EACH(p_store->subscriber_list, subscriber_container)                           \
         {                                                                                       \
@@ -134,17 +136,17 @@ bool cedux_run_##STORE_NAME(struct STORE_NAME##_handle * p_store) {             
         }                                                                                       \
       }                                                                                         \
     }                                                                                           \
-  }                                                                                             \
-  if (p_store->lock_release) p_store->lock_release(p_store->lock);                              \
-  if (did_work)                                                                                 \
-  {                                                                                             \
-    LIST_FOR_EACH(p_store->subscriber_list, subscriber_container)                               \
-    {                                                                                           \
-      if (subscriber_container.linked_reducer == NULL) {                                        \
-        subscriber_container.subscriber(p_store, &p_store->tree, subscriber_container.data);    \
-      }                                                                                         \
+    if(action_did_work) {                                                                       \
+        LIST_FOR_EACH(p_store->subscriber_list, subscriber_container)                           \
+        {                                                                                       \
+          if (subscriber_container.linked_reducer == NULL)                                      \
+          {                                                                                     \
+            subscriber_container.subscriber(p_store, &p_store->tree, subscriber_container.data);\
+          }                                                                                     \
+        }                                                                                       \
     }                                                                                           \
   }                                                                                             \
+  if (p_store->lock_release) p_store->lock_release(p_store->lock);                              \
   return did_work;                                                                              \
 }                                                                                               \
                                                                                                 \
